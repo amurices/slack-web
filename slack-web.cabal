@@ -35,6 +35,7 @@ library
       Web.Slack.Auth
       Web.Slack.Channel
       Web.Slack.Chat
+      Web.Slack.Conversations
       Web.Slack.Common
       Web.Slack.Group
       Web.Slack.Im

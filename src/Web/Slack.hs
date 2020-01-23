@@ -78,6 +78,7 @@ import qualified Web.Slack.Common as Common
 import qualified Web.Slack.Im as Im
 import qualified Web.Slack.Group as Group
 import qualified Web.Slack.User as User
+import qualified Web.Slack.Conversations as Conversations
 
 -- text
 import Data.Text (Text)
@@ -202,7 +203,11 @@ type Api =
       :> AuthProtect "token"
       :> ReqBody '[FormUrlEncoded] User.Email
       :> Post '[JSON] (ResponseJSON User.UserRsp)
-
+  :<|>
+    "conversations.history"
+      :> AuthProtect "token"
+      :> ReqBody '[FormUrlEncoded] Conversations.ConversationsHistoryReq
+      :> Post '[JSON] (ResponseJSON Conversations.ConversationsHistoryRsp)
 
 -- |
 --
@@ -457,7 +462,7 @@ usersList_
 
 userLookupByEmail
   :: (MonadReader env m, HasManager env, HasToken env, MonadIO m)
-  => User.Email 
+  => User.Email
   -> m (Response User.UserRsp)
 userLookupByEmail email = do
   authR <- mkSlackAuthenticateReq
@@ -549,6 +554,7 @@ apiTest_
   :<|> mpimHistory_
   :<|> usersList_
   :<|> userLookupByEmail_
+  :<|> conversationsHistory_
   =
   client (Proxy :: Proxy Api)
 
@@ -602,3 +608,18 @@ unnestErrors (Left slackErr) = Left (Common.ServantError slackErr)
 --
 mkSlackConfig :: Text -> IO SlackConfig
 mkSlackConfig token = SlackConfig <$> newManager tlsManagerSettings <*> pure token
+
+-- | Conversaions history
+--
+conversationsHistory
+  :: (MonadReader env m, HasManager env, HasToken env, MonadIO m)
+  => Conversations.ConversationsHistoryReq
+  -> m (Response Conversations.ConversationsHistoryRsp)
+conversationsHistory histReq = do
+  authR <- mkSlackAuthenticateReq
+  run (conversationsHistory_ authR histReq)
+
+conversationsHistory_
+  :: AuthenticatedRequest (AuthProtect "token")
+  -> Conversations.ConversationsHistoryReq
+  -> ClientM (ResponseJSON Conversations.ConversationsHistoryRsp)
