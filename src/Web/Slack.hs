@@ -33,6 +33,8 @@ module Web.Slack
   , usersList
   , userLookupByEmail
   , authenticateReq
+  , conversationsList
+  , conversationsHistory
   , Response
   , HasManager(..)
   , HasToken(..)
@@ -203,6 +205,11 @@ type Api =
       :> AuthProtect "token"
       :> ReqBody '[FormUrlEncoded] User.Email
       :> Post '[JSON] (ResponseJSON User.UserRsp)
+  :<|>
+    "conversations.list"
+      :> AuthProtect "token"
+      :> ReqBody '[FormUrlEncoded] Conversations.ConversationsListReq
+      :> Post '[JSON] (ResponseJSON Conversations.ConversationsListRsp)
   :<|>
     "conversations.history"
       :> AuthProtect "token"
@@ -554,6 +561,7 @@ apiTest_
   :<|> mpimHistory_
   :<|> usersList_
   :<|> userLookupByEmail_
+  :<|> conversationsList_
   :<|> conversationsHistory_
   =
   client (Proxy :: Proxy Api)
@@ -609,7 +617,22 @@ unnestErrors (Left slackErr) = Left (Common.ServantError slackErr)
 mkSlackConfig :: Text -> IO SlackConfig
 mkSlackConfig token = SlackConfig <$> newManager tlsManagerSettings <*> pure token
 
--- | Conversaions history
+-- | List conversations
+--
+conversationsList
+  :: (MonadReader env m, HasManager env, HasToken env, MonadIO m)
+  => Conversations.ConversationsListReq
+  -> m (Response Conversations.ConversationsListRsp)
+conversationsList histReq = do
+  authR <- mkSlackAuthenticateReq
+  run (conversationsList_ authR histReq)
+
+conversationsList_
+  :: AuthenticatedRequest (AuthProtect "token")
+  -> Conversations.ConversationsListReq
+  -> ClientM (ResponseJSON Conversations.ConversationsListRsp)
+
+-- | Conversations history
 --
 conversationsHistory
   :: (MonadReader env m, HasManager env, HasToken env, MonadIO m)

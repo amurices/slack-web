@@ -27,6 +27,7 @@ module Web.Slack.Common
   , MessageType(..)
   , SlackClientError(..)
   , SlackMessageText(..)
+  , ResponseMetadata (..)
   )
   where
 
@@ -149,3 +150,11 @@ data SlackClientError
   deriving (Eq, Generic, Show, Typeable)
 
 instance Exception SlackClientError
+
+data ResponseMetadata =
+  ResponseMetadata
+    { responseMetadataNextCursor :: Text
+    }
+  deriving (Eq, Generic, Show)
+
+$(deriveFromJSON (jsonOpts "responseMetadata") ''ResponseMetadata)
