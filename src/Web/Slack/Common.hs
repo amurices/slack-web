@@ -25,6 +25,7 @@ module Web.Slack.Common
   , HistoryRsp(..)
   , Message(..)
   , MessageType(..)
+  , MessageSubType(..)
   , SlackClientError(..)
   , SlackMessageText(..)
   , ResponseMetadata (..)
@@ -118,6 +119,13 @@ instance FromJSON MessageType where
   parseJSON "message" = pure MessageTypeMessage
   parseJSON _ = fail "Invalid MessageType"
 
+data MessageSubType = ChangeTopic | UnknownMessageSubType
+  deriving (Eq, Show)
+
+instance FromJSON MessageSubType where
+  parseJSON "channel_topic" = pure ChangeTopic
+  parseJSON _ = pure UnknownMessageSubType
+
 data Message =
   Message
     { messageType :: MessageType
@@ -126,6 +134,7 @@ data Message =
     -- ^ the message text is in a markdown-like slack-specific format.
     -- Use 'Web.Slack.MessageParser.messageToHtml' to convert it to HTML.
     , messageTs :: SlackTimestamp
+    , messageSubtype :: Maybe MessageSubType
     }
   deriving (Eq, Generic, Show)
 
